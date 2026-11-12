@@ -1,0 +1,10 @@
+{
+  "name": "播客",
+  "short_name": "播客",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2F3F7",
+  "theme_color": "#6A3DF0",
+  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png" }]
+}

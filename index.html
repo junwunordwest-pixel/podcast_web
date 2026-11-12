@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="播客">
+<meta name="theme-color" content="#F2F3F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D0E12" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<title>播客</title>
+<style>
+:root {
+  --bg: #F2F3F7; --surface: #FFFFFF; --ink: #12141A; --muted: #6B7080;
+  --line: rgba(18,20,26,.08); --accent: #6A3DF0; --accent-ink: #FFFFFF;
+  --accent-soft: rgba(106,61,240,.12); --shadow: 0 8px 28px rgba(18,20,26,.14);
+  --tabs-h: 52px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0D0E12; --surface: #1A1C22; --ink: #EEF0F5; --muted: #9A9FAE;
+    --line: rgba(255,255,255,.08); --accent: #A68BFF; --accent-ink: #14101F;
+    --accent-soft: rgba(166,139,255,.16); --shadow: 0 8px 28px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  color: var(--ink); background: var(--bg); line-height: 1.45;
+  -webkit-font-smoothing: antialiased; min-height: 100vh;
+}
+button, input, select { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+img { display: block; max-width: 100%; }
+svg { display: block; }
+
+/* 顶栏 */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  padding: env(safe-area-inset-top, 0px) 6px 0;
+  height: calc(44px + env(safe-area-inset-top, 0px));
+  display: flex; align-items: center; justify-content: space-between;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+}
+.topbar button { height: 44px; padding: 0 10px; display: flex; align-items: center; gap: 2px; color: var(--accent); font-size: 17px; }
+.topbar button[hidden] { display: flex; visibility: hidden; }
+.topbar svg { width: 24px; height: 24px; }
+
+main {
+  max-width: 680px; margin: 0 auto;
+  padding: 0 16px calc(var(--tabs-h) + env(safe-area-inset-bottom, 0px) + 24px);
+}
+body.has-mini main { padding-bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom, 0px) + 96px); }
+h1.big { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin: 2px 0 14px; }
+
+/* 搜索框 */
+.searchbox {
+  display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px;
+  background: var(--surface); border-radius: 12px; margin-bottom: 8px;
+}
+.searchbox svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+.searchbox input { flex: 1; min-width: 0; border: 0; background: transparent; font-size: 17px; outline: none; }
+.searchbox input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+/* 节目列表 */
+.list { list-style: none; }
+.row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 0; }
+.row img, .row .ph { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: none; background: var(--line); }
+.row .txt { flex: 1; min-width: 0; padding-bottom: 10px; margin-bottom: -10px; border-bottom: 1px solid var(--line); align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
+.list li:last-child .row .txt { border-bottom: 0; }
+.row b { font-weight: 600; font-size: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.row span { color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 节目详情 */
+.pod-head { text-align: center; padding: 8px 0 20px; }
+.pod-head img { width: 200px; height: 200px; border-radius: 22px; object-fit: cover; margin: 0 auto 16px; box-shadow: var(--shadow); background: var(--line); }
+.pod-head h1 { font-size: 22px; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; }
+.pod-head p { color: var(--muted); margin: 4px 0 16px; }
+.sub { padding: 9px 26px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 15px; }
+.sub.on { background: var(--accent-soft); color: var(--accent); }
+.count { color: var(--muted); font-size: 13px; padding: 8px 0 4px; border-bottom: 1px solid var(--line); }
+
+.eps { list-style: none; }
+.eps li { border-bottom: 1px solid var(--line); }
+.ep { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; width: 100%; text-align: left; padding: 14px 0; }
+.ep .meta { display: flex; gap: 10px; font-size: 13px; color: var(--muted); }
+.ep .meta .done { color: var(--accent); }
+.ep .t { font-weight: 600; font-size: 16px; line-height: 1.35; margin: 2px 0 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ep.cur .t { color: var(--accent); }
+.ep .s { font-size: 14px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ep .pb { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.ep .pb svg { width: 18px; height: 18px; }
+.ep.cur .pb { background: var(--accent); color: var(--accent-ink); }
+.more { display: block; width: 100%; padding: 16px; color: var(--accent); font-weight: 600; }
+
+/* 空状态、加载 */
+.empty { text-align: center; padding: 72px 20px; }
+.empty h2 { font-size: 19px; font-weight: 600; margin-bottom: 6px; }
+.empty p { color: var(--muted); font-size: 15px; max-width: 30em; margin: 0 auto; }
+.empty button { margin-top: 16px; color: var(--accent); font-weight: 600; padding: 8px 16px; }
+.spin { width: 28px; height: 28px; margin: 64px auto; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 底部标签栏 */
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  height: calc(var(--tabs-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: flex; border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+}
+.tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; color: var(--muted); }
+.tabs button svg { width: 24px; height: 24px; }
+.tabs button.on { color: var(--accent); }
+
+/* 迷你播放条 */
+.mini {
+  position: fixed; z-index: 31; left: 8px; right: 8px;
+  bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom, 0px) + 8px);
+  max-width: 664px; margin: 0 auto;
+  display: none; align-items: center; gap: 10px; padding: 8px 6px 8px 8px;
+  background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden;
+}
+body.has-mini .mini { display: flex; }
+.mini img { width: 44px; height: 44px; border-radius: 9px; object-fit: cover; background: var(--line); flex: none; }
+.mini .info { flex: 1; min-width: 0; }
+.mini .info b, .mini .info span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini .info b { font-size: 15px; font-weight: 600; }
+.mini .info span { font-size: 12px; color: var(--muted); }
+.mini .ctl { width: 42px; height: 42px; display: grid; place-items: center; flex: none; }
+.mini .ctl svg { width: 24px; height: 24px; }
+.mini .bar { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); width: 0; }
+
+/* 全屏播放页 */
+.player {
+  position: fixed; inset: 0; z-index: 50; background: var(--bg); overflow: hidden;
+  transform: translateY(100%); transition: transform .38s cubic-bezier(.2,.8,.2,1);
+  visibility: hidden;
+}
+.player.open { transform: none; visibility: visible; }
+.player .bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(50px) saturate(1.4); opacity: .35; }
+.player .inner {
+  position: relative; height: 100%; max-width: 480px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 28px calc(env(safe-area-inset-bottom, 0px) + 24px);
+}
+.player .close { width: 56px; height: 36px; display: grid; place-items: center; color: var(--muted); }
+.player .close svg { width: 28px; height: 28px; }
+.player .art-wrap { flex: 1; display: grid; place-items: center; width: 100%; min-height: 0; }
+.player .art {
+  width: min(78vw, 320px, 42vh); aspect-ratio: 1; border-radius: 24px; object-fit: cover;
+  box-shadow: 0 20px 50px rgba(0,0,0,.28); background: var(--line);
+  transform: scale(.86); transition: transform .45s cubic-bezier(.2,.8,.2,1);
+}
+.player.playing .art { transform: none; }
+.player .meta { width: 100%; text-align: center; margin: 8px 0 18px; }
+.player .meta h2 { font-size: 20px; font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.player .meta p { color: var(--muted); margin-top: 4px; }
+.seek { width: 100%; -webkit-appearance: none; appearance: none; height: 24px; background: transparent; --p: 0%; }
+.seek::-webkit-slider-runnable-track { height: 5px; border-radius: 3px; background: linear-gradient(to right, var(--ink) var(--p), var(--line) var(--p)); }
+.seek::-moz-range-track { height: 5px; border-radius: 3px; background: linear-gradient(to right, var(--ink) var(--p), var(--line) var(--p)); }
+.seek::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); margin-top: -5.5px; }
+.seek::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--ink); border: 0; }
+.times { width: 100%; display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.controls { display: flex; align-items: center; justify-content: center; gap: 36px; margin: 22px 0 22px; }
+.controls .sk { width: 56px; height: 56px; display: grid; place-items: center; }
+.controls .sk svg { width: 38px; height: 38px; }
+.controls .main { width: 78px; height: 78px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; }
+.controls .main svg { width: 34px; height: 34px; }
+.rate { padding: 7px 16px; border-radius: 999px; background: var(--line); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+
+/* 设置弹窗 */
+.modal { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.35); display: grid; place-items: end center; padding: 12px 12px calc(env(safe-area-inset-bottom, 0px) + 12px); }
+.modal[hidden] { display: none; }
+.modal-card { width: 100%; max-width: 480px; background: var(--surface); border-radius: 20px; padding: 20px; }
+.modal-card h2 { font-size: 20px; margin-bottom: 14px; }
+.modal-card label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 14px; }
+.modal-card input, .modal-card select { display: block; width: 100%; margin-top: 6px; height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 16px; }
+.modal-card .hint { font-size: 13px; color: var(--muted); margin: -6px 0 16px; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-actions button { flex: 1; height: 46px; border-radius: 12px; background: var(--line); font-weight: 600; }
+.modal-actions .primary { background: var(--accent); color: var(--accent-ink); }
+
+.toast {
+  position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 56px); z-index: 70;
+  transform: translate(-50%, -20px); opacity: 0; transition: .25s;
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; max-width: 90vw; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation-duration: 0s !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button id="back" data-act="back" hidden aria-label="返回">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>返回
+  </button>
+  <button id="settings-btn" data-act="settings-open">设置</button>
+</header>
+
+<main id="view"></main>
+
+<div class="mini" id="mini" data-act="open-player">
+  <img id="mini-art" alt="">
+  <div class="info"><b id="mini-title"></b><span id="mini-pod"></span></div>
+  <button class="ctl" id="mini-play" data-act="toggle" aria-label="播放"></button>
+  <button class="ctl" data-act="fwd" aria-label="前进 30 秒"></button>
+  <div class="bar" id="mini-bar"></div>
+</div>
+
+<nav class="tabs">
+  <button data-tab="search" data-act="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg>发现
+  </button>
+  <button data-tab="library" data-act="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="2.5"/><path d="M6.5 5.5h11M9 2.5h6"/></svg>订阅
+  </button>
+</nav>
+
+<section class="player" id="player" aria-label="正在播放">
+  <div class="bg" id="p-bg"></div>
+  <div class="inner">
+    <button class="close" data-act="close-player" aria-label="收起">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></svg>
+    </button>
+    <div class="art-wrap"><img class="art" id="p-art" alt=""></div>
+    <div class="meta"><h2 id="p-title"></h2><p id="p-pod"></p></div>
+    <input class="seek" id="seek" type="range" min="0" max="1000" step="1" value="0" aria-label="播放进度">
+    <div class="times"><span id="t-cur">0:00</span><span id="t-left">--:--</span></div>
+    <div class="controls">
+      <button class="sk" data-act="back15" aria-label="后退 15 秒"></button>
+      <button class="main" id="p-play" data-act="toggle" aria-label="播放"></button>
+      <button class="sk" data-act="fwd" aria-label="前进 30 秒"></button>
+    </div>
+    <button class="rate" id="p-rate" data-act="rate" aria-label="播放速度">1×</button>
+  </div>
+</section>
+
+<div class="modal" id="settings" hidden>
+  <div class="modal-card">
+    <h2>设置</h2>
+    <label>搜索地区
+      <select id="s-country">
+        <option value="us">美国（收录最全，含大部分中文节目）</option>
+        <option value="cn">中国大陆</option>
+        <option value="tw">台湾</option>
+        <option value="hk">香港</option>
+        <option value="jp">日本</option>
+        <option value="gb">英国</option>
+      </select>
+    </label>
+    <label>代理地址（可选）
+      <input id="s-proxy" type="url" inputmode="url" autocomplete="off" placeholder="https://你的名字.workers.dev">
+    </label>
+    <p class="hint">有些节目的单集列表要通过代理才能读取。按说明部署好自己的 Cloudflare Worker，把地址填在这里，加载会更稳定。</p>
+    <div class="modal-actions">
+      <button data-act="settings-close">取消</button>
+      <button class="primary" data-act="settings-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<audio id="audio" preload="metadata" playsinline></audio>
+
+<script>
+const $ = s => document.querySelector(s);
+const view = $('#view');
+const audio = $('#audio');
+
+const I = {
+  play: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.6v12.8a1 1 0 0 0 1.5.86l10.8-6.4a1 1 0 0 0 0-1.72L9.5 4.74A1 1 0 0 0 8 5.6z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><rect fill="currentColor" x="6" y="5" width="4.4" height="14" rx="1.2"/><rect fill="currentColor" x="13.6" y="5" width="4.4" height="14" rx="1.2"/></svg>',
+  back15: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6A10 10 0 1 1 6.5 12.9"/><path d="M19 3l-3 3 3 3"/><text x="16" y="20" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" stroke="none" font-family="-apple-system, sans-serif">15</text></svg>',
+  fwd30: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6A10 10 0 1 0 25.5 12.9"/><path d="M13 3l3 3-3 3"/><text x="16" y="20" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" stroke="none" font-family="-apple-system, sans-serif">30</text></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg>'
+};
+document.querySelectorAll('[data-act="back15"]').forEach(b => b.innerHTML = I.back15);
+document.querySelectorAll('[data-act="fwd"]').forEach(b => b.innerHTML = I.fwd30);
+
+/* ---------- 本地存储 ---------- */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+let subs = store.get('subs', []);
+let progress = store.get('progress', {});
+let settings = Object.assign({ proxy: '', country: 'us' }, store.get('settings', {}));
+let rate = store.get('rate', 1);
+const RATES = [0.75, 1, 1.25, 1.5, 1.75, 2];
+
+/* ---------- 小工具 ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function fmt(t) {
+  if (!isFinite(t) || t < 0) return '--:--';
+  t = Math.floor(t);
+  const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60, p = n => String(n).padStart(2, '0');
+  return h ? `${h}:${p(m)}:${p(s)}` : `${m}:${p(s)}`;
+}
+function parseDur(s) {
+  if (!s) return null;
+  const parts = s.trim().split(':').map(Number);
+  if (parts.some(isNaN)) return null;
+  return parts.reduce((a, b) => a * 60 + b, 0);
+}
+function strip(html) {
+  if (!html) return '';
+  const d = new DOMParser().parseFromString(html, 'text/html');
+  return (d.body.textContent || '').replace(/\s+/g, ' ').trim();
+}
+function fmtDate(d) {
+  if (!d || isNaN(d)) return '';
+  const opts = { month: 'long', day: 'numeric' };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString('zh-CN', opts);
+}
+const rateLabel = r => `${r}×`;
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+const spinner = '<div class="spin" aria-label="加载中"></div>';
+const empty = (title, text, btn = '') => `<div class="empty"><h2>${esc(title)}</h2><p>${esc(text)}</p>${btn}</div>`;
+
+/* ---------- 网络 ---------- */
+// iTunes Search API 用 JSONP 调用，不受跨域限制
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    const s = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('请求超时')); }, 15000);
+    function cleanup() { delete window[cb]; s.remove(); clearTimeout(timer); }
+    window[cb] = data => { cleanup(); resolve(data); };
+    s.onerror = () => { cleanup(); reject(new Error('网络连接失败')); };
+    s.src = url + '&callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+async function searchPodcasts(term) {
+  const url = 'https://itunes.apple.com/search?media=podcast&entity=podcast&limit=50'
+    + '&country=' + encodeURIComponent(settings.country || 'us')
+    + '&term=' + encodeURIComponent(term);
+  const data = await jsonp(url);
+  return (data.results || []).filter(r => r.feedUrl).map(r => ({
+    id: r.collectionId, name: r.collectionName || '未知节目', artist: r.artistName || '',
+    art: r.artworkUrl600 || r.artworkUrl100 || '', feed: r.feedUrl
+  }));
+}
+// 读取 RSS：先用你自己的代理，再直接读，最后用公共代理
+async function fetchText(url) {
+  const tries = [];
+  if (settings.proxy) tries.push(settings.proxy.trim().replace(/\/+$/, '') + '/?url=' + encodeURIComponent(url));
+  tries.push(url);
+  tries.push('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
+  let last;
+  for (const u of tries) {
+    try {
+      const r = await fetch(u);
+      if (!r.ok) throw new Error('服务器返回 ' + r.status);
+      const text = await r.text();
+      if (!/<(rss|feed|channel)[\s>]/i.test(text)) throw new Error('返回的不是 RSS');
+      return text;
+    } catch (e) { last = e; }
+  }
+  throw new Error(last && last.message === 'Load failed' ? '网络连接失败' : (last ? last.message : '读取失败'));
+}
+function parseFeed(xml, pod) {
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw new Error('RSS 格式无法解析');
+  return [...doc.getElementsByTagName('item')].map(it => {
+    const get = n => { const el = it.getElementsByTagName(n)[0]; return el ? el.textContent.trim() : ''; };
+    const enc = it.getElementsByTagName('enclosure')[0];
+    const url = enc && enc.getAttribute('url');
+    if (!url) return null;
+    const img = it.getElementsByTagName('itunes:image')[0];
+    const dateStr = get('pubDate');
+    return {
+      id: get('guid') || url,
+      title: get('title') || '未命名单集',
+      summary: strip(get('description') || get('itunes:summary')).slice(0, 300),
+      url,
+      date: dateStr ? new Date(dateStr).getTime() : null,
+      duration: parseDur(get('itunes:duration')),
+      art: (img && img.getAttribute('href')) || pod.art
+    };
+  }).filter(Boolean);
+}
+
+/* ---------- 导航 ---------- */
+let tab = 'search';
+const nav = { search: [], library: [] };
+const scrolls = { search: [], library: [] };
+const pods = new Map();
+const feedCache = new Map();
+const feedState = new Map();
+let lastQuery = '', lastResults = [], searchState = 'idle', searchError = '', searchToken = 0, debounce;
+
+const topView = () => nav[tab][nav[tab].length - 1] || { type: tab };
+function pushView(v) { scrolls[tab].push(window.scrollY); nav[tab].push(v); render(); window.scrollTo(0, 0); }
+function popView() { nav[tab].pop(); render(); window.scrollTo(0, scrolls[tab].pop() || 0); }
+
+function render() {
+  const v = topView();
+  $('#back').hidden = nav[tab].length === 0;
+  $('#settings-btn').hidden = nav[tab].length !== 0;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  if (v.type === 'search') renderSearch();
+  else if (v.type === 'library') renderLibrary();
+  else if (v.type === 'podcast') renderPodcast(v);
+}
+
+function podList(list) {
+  return '<ul class="list">' + list.map(p => {
+    pods.set(String(p.id), p);
+    return `<li><button class="row" data-act="open-pod" data-id="${esc(p.id)}">
+      ${p.art ? `<img src="${esc(p.art)}" alt="" loading="lazy">` : '<div class="ph"></div>'}
+      <div class="txt"><b>${esc(p.name)}</b><span>${esc(p.artist)}</span></div>
+    </button></li>`;
+  }).join('') + '</ul>';
+}
+
+function renderSearch() {
+  view.innerHTML = `<h1 class="big">发现</h1>
+    <form class="searchbox" id="sform" role="search">${I.search}
+      <input id="q" type="search" placeholder="节目名、主播或关键词" enterkeyhint="search" autocomplete="off" autocorrect="off" value="${esc(lastQuery)}">
+    </form>
+    <div id="results"></div>`;
+  const q = $('#q');
+  q.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(() => doSearch(q.value), 450); });
+  $('#sform').addEventListener('submit', e => { e.preventDefault(); clearTimeout(debounce); doSearch(q.value); q.blur(); });
+  renderResults();
+}
+async function doSearch(term) {
+  term = term.trim();
+  if (term === lastQuery && searchState === 'done') return;
+  lastQuery = term;
+  const token = ++searchToken;
+  if (!term) { lastResults = []; searchState = 'idle'; renderResults(); return; }
+  searchState = 'loading'; renderResults();
+  try {
+    const r = await searchPodcasts(term);
+    if (token !== searchToken) return;
+    lastResults = r; searchState = 'done';
+  } catch (e) {
+    if (token !== searchToken) return;
+    lastResults = []; searchState = 'error'; searchError = e.message;
+  }
+  renderResults();
+}
+function renderResults() {
+  const box = $('#results'); if (!box) return;
+  if (searchState === 'loading') box.innerHTML = spinner;
+  else if (searchState === 'error') box.innerHTML = empty('搜索没有成功', searchError + '，检查网络后再试一次。');
+  else if (!lastResults.length) box.innerHTML = lastQuery
+    ? empty('没有找到相关节目', '换个关键词试试，比如节目全名或主播名字。')
+    : empty('找一档想听的节目', '输入节目名、主播或关键词，结果会马上出现。');
+  else box.innerHTML = podList(lastResults);
+}
+
+function renderLibrary() {
+  view.innerHTML = '<h1 class="big">订阅</h1>' + (subs.length
+    ? podList(subs)
+    : empty('还没有订阅', '在“发现”里搜索节目，点“订阅”，它就会出现在这里。'));
+}
+
+const isSub = p => subs.some(s => String(s.id) === String(p.id));
+function toggleSub(p) {
+  subs = isSub(p) ? subs.filter(s => String(s.id) !== String(p.id)) : [p, ...subs];
+  store.set('subs', subs);
+}
+
+function renderPodcast(v) {
+  const p = v.pod, on = isSub(p);
+  view.innerHTML = `<section class="pod-head">
+      ${p.art ? `<img src="${esc(p.art)}" alt="">` : ''}
+      <h1>${esc(p.name)}</h1><p>${esc(p.artist)}</p>
+      <button class="sub ${on ? 'on' : ''}" id="sub-btn" data-act="sub">${on ? '已订阅' : '订阅'}</button>
+    </section>
+    <div id="eps"></div>`;
+  renderEpisodes();
+  if (!feedCache.has(p.feed) && !(feedState.get(p.feed) || {}).loading) loadFeed(p);
+}
+async function loadFeed(p) {
+  feedState.set(p.feed, { loading: true });
+  try {
+    feedCache.set(p.feed, parseFeed(await fetchText(p.feed), p));
+    feedState.delete(p.feed);
+  } catch (e) {
+    feedState.set(p.feed, { error: e.message });
+  }
+  renderEpisodes();
+}
+function renderEpisodes() {
+  const v = topView(), box = $('#eps');
+  if (!box || v.type !== 'podcast') return;
+  const eps = feedCache.get(v.pod.feed), st = feedState.get(v.pod.feed) || {};
+  if (!eps) {
+    box.innerHTML = st.error
+      ? empty('单集列表没有加载出来', st.error + '。可以稍后重试，或在设置里填写自己的代理地址。', '<button data-act="retry">重试</button>')
+      : spinner;
+    return;
+  }
+  if (!eps.length) { box.innerHTML = empty('这个节目还没有单集', '过段时间再来看看。'); return; }
+  const limit = v.limit || 100;
+  box.innerHTML = `<p class="count">共 ${eps.length} 集</p><ul class="eps">`
+    + eps.slice(0, limit).map((ep, i) => epRow(ep, i)).join('') + '</ul>'
+    + (eps.length > limit ? `<button class="more" data-act="more">显示更早的单集</button>` : '');
+}
+function epRow(ep, i) {
+  const cur = current && current.ep.url === ep.url;
+  const playing = cur && !audio.paused;
+  const p = progress[ep.url];
+  const meta = [];
+  const d = fmtDate(ep.date ? new Date(ep.date) : null);
+  if (d) meta.push(`<span>${esc(d)}</span>`);
+  if (p === 'done') meta.push('<span class="done">已听完</span>');
+  else if (p && ep.duration) meta.push(`<span>剩余 ${Math.max(1, Math.round((ep.duration - p) / 60))} 分钟</span>`);
+  else if (ep.duration) meta.push(`<span>${Math.max(1, Math.round(ep.duration / 60))} 分钟</span>`);
+  return `<li><button class="ep ${cur ? 'cur' : ''}" data-act="play" data-i="${i}">
+    <div><div class="meta">${meta.join('')}</div>
+      <div class="t">${esc(ep.title)}</div>
+      ${ep.summary ? `<div class="s">${esc(ep.summary)}</div>` : ''}</div>
+    <span class="pb" aria-label="${playing ? '暂停' : '播放'}">${playing ? I.pause : I.play}</span>
+  </button></li>`;
+}
+
+/* ---------- 播放器 ---------- */
+let current = null, pendingSeek = 0, seeking = false, seekPreview = 0, lastSave = 0;
+
+const httpsify = u => u.replace(/^http:\/\//i, 'https://');
+const dur = () => (isFinite(audio.duration) && audio.duration > 0) ? audio.duration : (current && current.ep.duration) || 0;
+
+function playEpisode(ep, pod) {
+  if (current && current.ep.url === ep.url) { togglePlay(); return; }
+  savePos(true);
+  current = { ep, pod };
+  store.set('current', current);
+  const saved = progress[ep.url];
+  pendingSeek = typeof saved === 'number' ? saved : 0;
+  audio.src = httpsify(ep.url);
+  audio.play().catch(err => { if (err.name !== 'AbortError') toast('无法播放这一集'); });
+  updatePlayerUI();
+  updateMediaSession();
+}
+function togglePlay() {
+  if (!current) return;
+  if (audio.paused) audio.play().catch(() => toast('无法播放这一集'));
+  else audio.pause();
+}
+function seekTo(t) {
+  const d = dur();
+  t = Math.max(0, d ? Math.min(t, d - 1) : t);
+  if (audio.readyState >= 1) audio.currentTime = t; else pendingSeek = t;
+  updateTimes();
+}
+const skip = s => seekTo((audio.readyState >= 1 ? audio.currentTime : pendingSeek) + s);
+
+function savePos(force) {
+  if (!current) return;
+  const now = Date.now();
+  if (!force && now - lastSave < 5000) return;
+  lastSave = now;
+  const t = audio.currentTime;
+  if (t > 5 && progress[current.ep.url] !== 'done') { progress[current.ep.url] = Math.floor(t); store.set('progress', progress); }
+}
+
+function updatePlayerUI() {
+  document.body.classList.toggle('has-mini', !!current);
+  if (!current) return;
+  const { ep, pod } = current, art = ep.art || pod.art || '';
+  $('#mini-art').src = art; $('#p-art').src = art;
+  $('#p-bg').style.backgroundImage = art ? `url("${art.replace(/"/g, '%22')}")` : '';
+  $('#mini-title').textContent = ep.title; $('#p-title').textContent = ep.title;
+  $('#mini-pod').textContent = pod.name; $('#p-pod').textContent = pod.name;
+  $('#p-rate').textContent = rateLabel(rate);
+  updatePlayState(); updateTimes();
+}
+function updatePlayState() {
+  const playing = !!current && !audio.paused;
+  for (const id of ['#mini-play', '#p-play']) {
+    const b = $(id); b.innerHTML = playing ? I.pause : I.play; b.setAttribute('aria-label', playing ? '暂停' : '播放');
+  }
+  $('#player').classList.toggle('playing', playing);
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+  renderEpisodes();
+}
+function updateTimes() {
+  const d = dur();
+  const t = seeking ? seekPreview : (audio.readyState >= 1 ? audio.currentTime : pendingSeek) || 0;
+  const pct = d ? Math.min(100, t / d * 100) : 0;
+  $('#mini-bar').style.width = pct + '%';
+  const s = $('#seek');
+  if (!seeking) s.value = d ? Math.round(t / d * 1000) : 0;
+  s.style.setProperty('--p', pct + '%');
+  $('#t-cur').textContent = fmt(t);
+  $('#t-left').textContent = d ? '-' + fmt(d - t) : '--:--';
+}
+
+// 锁屏、控制中心、耳机按键
+function updateMediaSession() {
+  if (!('mediaSession' in navigator) || !current) return;
+  const art = current.ep.art || current.pod.art;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: current.ep.title, artist: current.pod.name, album: current.pod.name,
+    artwork: art ? [{ src: art, sizes: '600x600' }] : []
+  });
+}
+if ('mediaSession' in navigator) {
+  const set = (a, h) => { try { navigator.mediaSession.setActionHandler(a, h); } catch {} };
+  set('play', () => audio.play());
+  set('pause', () => audio.pause());
+  set('seekbackward', d => skip(-((d && d.seekOffset) || 15)));
+  set('seekforward', d => skip((d && d.seekOffset) || 30));
+  set('seekto', d => { if (d && d.seekTime != null) seekTo(d.seekTime); });
+}
+function updatePosState() {
+  if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) return;
+  const d = audio.duration;
+  if (!isFinite(d) || d <= 0) return;
+  try { navigator.mediaSession.setPositionState({ duration: d, position: Math.min(audio.currentTime, d), playbackRate: audio.playbackRate }); } catch {}
+}
+
+audio.addEventListener('loadedmetadata', () => {
+  if (pendingSeek) { audio.currentTime = pendingSeek; pendingSeek = 0; }
+  audio.playbackRate = rate;
+  updateTimes(); updatePosState();
+});
+audio.addEventListener('play', () => { audio.playbackRate = rate; updatePlayState(); });
+audio.addEventListener('pause', () => { savePos(true); updatePlayState(); });
+audio.addEventListener('timeupdate', () => { updateTimes(); savePos(false); });
+audio.addEventListener('durationchange', () => { updateTimes(); updatePosState(); });
+audio.addEventListener('seeked', updatePosState);
+audio.addEventListener('ended', () => {
+  if (current) { progress[current.ep.url] = 'done'; store.set('progress', progress); }
+  updatePlayState();
+});
+audio.addEventListener('error', () => { if (current && audio.getAttribute('src')) toast('这一集的音频无法加载'); });
+
+const seekEl = $('#seek');
+seekEl.addEventListener('input', () => { seeking = true; seekPreview = seekEl.value / 1000 * dur(); updateTimes(); });
+seekEl.addEventListener('change', () => { seekTo(seekEl.value / 1000 * dur()); seeking = false; updateTimes(); });
+
+document.addEventListener('visibilitychange', () => { if (document.hidden) savePos(true); });
+window.addEventListener('pagehide', () => savePos(true));
+
+/* ---------- 点击事件 ---------- */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act;
+  if (act !== 'open-player') e.stopPropagation();
+  const v = topView();
+  switch (act) {
+    case 'tab': {
+      const t = el.dataset.tab;
+      if (t === tab) { if (nav[tab].length) { nav[tab] = []; scrolls[tab] = []; render(); } window.scrollTo(0, 0); }
+      else { tab = t; render(); window.scrollTo(0, 0); }
+      break;
+    }
+    case 'back': popView(); break;
+    case 'open-pod': { const p = pods.get(el.dataset.id); if (p) pushView({ type: 'podcast', pod: p }); break; }
+    case 'sub': {
+      toggleSub(v.pod);
+      const on = isSub(v.pod), b = $('#sub-btn');
+      b.textContent = on ? '已订阅' : '订阅'; b.classList.toggle('on', on);
+      toast(on ? '已订阅' : '已取消订阅');
+      break;
+    }
+    case 'retry': feedState.delete(v.pod.feed); renderEpisodes(); loadFeed(v.pod); break;
+    case 'more': v.limit = (v.limit || 100) + 200; renderEpisodes(); break;
+    case 'play': {
+      const eps = feedCache.get(v.pod.feed);
+      if (eps) playEpisode(eps[+el.dataset.i], v.pod);
+      break;
+    }
+    case 'toggle': togglePlay(); break;
+    case 'fwd': skip(30); break;
+    case 'back15': skip(-15); break;
+    case 'rate': {
+      rate = RATES[(RATES.indexOf(rate) + 1) % RATES.length] || 1;
+      audio.playbackRate = rate; store.set('rate', rate);
+      el.textContent = rateLabel(rate); updatePosState();
+      break;
+    }
+    case 'open-player': $('#player').classList.add('open'); break;
+    case 'close-player': $('#player').classList.remove('open'); break;
+    case 'settings-open':
+      $('#s-proxy').value = settings.proxy; $('#s-country').value = settings.country;
+      $('#settings').hidden = false; break;
+    case 'settings-close': $('#settings').hidden = true; break;
+    case 'settings-save':
+      settings = { proxy: $('#s-proxy').value.trim(), country: $('#s-country').value };
+      store.set('settings', settings);
+      $('#settings').hidden = true;
+      searchState = 'idle'; const q = lastQuery; lastQuery = ''; if (q && tab === 'search' && !nav.search.length) doSearch(q);
+      toast('已保存');
+      break;
+  }
+});
+$('#settings').addEventListener('click', e => { if (e.target.id === 'settings') $('#settings').hidden = true; });
+
+// 播放页向下滑动收起
+(() => {
+  const pl = $('#player'); let y0 = null;
+  pl.addEventListener('touchstart', e => { if (!e.target.closest('.seek')) y0 = e.touches[0].clientY; }, { passive: true });
+  pl.addEventListener('touchend', e => {
+    if (y0 != null && e.changedTouches[0].clientY - y0 > 110) pl.classList.remove('open');
+    y0 = null;
+  }, { passive: true });
+})();
+
+/* ---------- 启动：恢复上次播放的节目 ---------- */
+(() => {
+  const saved = store.get('current', null);
+  if (saved && saved.ep && saved.pod) {
+    current = saved;
+    const p = progress[saved.ep.url];
+    pendingSeek = typeof p === 'number' ? p : 0;
+    audio.src = httpsify(saved.ep.url);
+    updatePlayerUI(); updateMediaSession();
+  }
+  render();
+})();
+</script>
+</body>
+</html>
